@@ -88,14 +88,18 @@ AMI
 
 なお、それぞれの役割は以下のようになっています。
 
+- server
+
+  csvデータを登録してデータ生成器として働く
+
 - source.py
 
-  センサーデータが次々にやってくる。それを受けてenqueueする。
+  データ生成器からデータを取得してMQにenqueueする。
 
 - jubatus_update.py 10.X.X.X
 
-  10.X.X.Xにあるキューserverから、dequeueして、localhost のjubanearest_neighborに学習させる。
-  jubatus_update.pyからみるとjubanearest_neighborは必ずlocalhostにあるように見える。
+  10.X.X.Xにあるキューserverから、dequeueして、localhost のjubaanomalyに学習させる。
+  jubatus_update.pyからみるとjubaanomalyは必ずlocalhostにあるように見える。
   
 - jubatus_analyze.py [id]
 
@@ -110,30 +114,36 @@ AMI
 
 ::
 
-    ubuntu@[manager]:~$ jubanearest_neighbor -f config.json
+    ubuntu@[manager]:~$ jubaanomaly -f config.json
 
 * shell2
 
 ::
 
-    ubuntu@[manager]:~$ python source.py
+    ubuntu@[manager]:~$ ./server
+
 
 * shell3
 
 ::
 
-    ubuntu@[manager]:~$ python jubatus_update.py 10.X.X.X
+    ubuntu@[manager]:~$ python source.py --streamname test  --filename estimate/test.csv --count 1000
+
 
 * shell4
 
 ::
 
-    ubuntu@[manager]:~$ python jubatus_analyze.py 0
-    ubuntu@[manager]:~$ python jubatus_analyze.py 1
+    ubuntu@[manager]:~$ python jubatus_update.py 10.X.X.X
 
-最後のshell4に近傍が出力されているかと思います。
-[('0', -0.0), ('5', -0.025126328691840172), ('9', -0.389676570892334), ('2', -0.6407973170280457), ('19', -1.0131890773773193)]
-1つ目の'0'は、'0'に近い点を探しているので当然として、'5', '9'の順に近いとしています。
+* shell5
+
+::
+
+    ubuntu@[manager]:~$ python jubatus_analyze.py 
+
+最後のshell5に異常スコアが表示されていると思います。
+1.0に近ければ正常、それよりも大きければ大きいほど異常度が高いということになります。
 これは、学習している途中なので、結果はタイミングによって変わります。
 なお、もし"WARNING:root:Connect error on fd 7: [Errno 99] Cannot assign requested addressc msgpackrpc.error.TransportError: Retry connection over the limit"のようなエラーが出る場合は、
 
