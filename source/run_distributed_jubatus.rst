@@ -7,43 +7,33 @@ Jubatusを動かしてみる。
 AMI
 -----------------
 
-用意されたVMでは、EC2公式のubuntu 12.04 serverイメージに追加して、以下の様な設定がされています。
+用意されたVMでは、EC2公式のubuntu 12.04.3 LTSイメージに追加して、主に以下の様なインストールがされています。
 
 ::
 
-    ubuntu@[manager]:~$ history 
-        1  sudo vi /etc/apt/sources.list
-        2  sudo apt-get update
-        3  sudo apt-get install build-essential git zookeeper rabbitmq-server python-pip
-        4  git clone https://github.com/jubatus/jubatus-installer.git
-        5  jubatus-installer/install.sh -D
-        6  vi /home/ubuntu/.bashrc 
-        7  git clone https://github.com/odasatoshi/jubatus_distributed_handson.git
-        8  sudo pip install jubatus pika==0.9.8
-        9  exit
-       10  history 
-    
-       ubuntu@[manager]:~$ cd jubatus_distributed_handson/
-
-最初に、 ``jubatus_distributed_handson`` ディレクトリに移動します。
-以後、すべてこのディレクトリ内で作業をします。
+    $ sudo apt-get install build-essential git zookeeper rabbitmq-server python-pip
+    $ git clone https://github.com/jubatus/jubatus-installer.git
+    $ jubatus-installer/install.sh -D
+    $ git clone https://github.com/odasatoshi/jubatus_distributed_handson.git
+    $ sudo pip install jubatus pika==0.9.8
 
 
 初期設定
 -------------
 
-サンプルに更新があるかもしれません。まずは最新化しましょう。
+最初に、 ``jubatus_distributed_handson`` ディレクトリに移動します。
+以後、すべてこのディレクトリ内で作業をします。
 
 ::
 
-    ubuntu@[manager]:~$ git pull
+    ubuntu@[manager]:~$ cd jubatus_distributed_handson
 
 
 次に、 ``manager`` 内で、MessageQueueを起動しておきます。
 
 ::
 
-    ubuntu@[manager]:~$ sudo sh init_mq.sh 
+    ubuntu@[manager]:~/jubatus_distributed_handson$ sudo sh init_mq.sh 
 
 これは、最初の一回だけで一度起動すれば、マシンを再起動しない限り、ログアウトしても有効です。
 
@@ -108,50 +98,45 @@ AMI
 一台構成で動かしてみます。
 その前に、SSHの接続を増やすか、screen, byobuなどで4つのセッションを確保してください。
 よくわからなければ、ターミナルを4つ開いて、それぞれからSSHで接続してください。
+ここでは全てのターミナルが ``manager`` に接続して ``jubatus_distributed_handson`` ディレクトリにいると仮定しています。
 各シェルで、以下のコマンドを実行します。
 
 * shell1
 
 ::
 
-    ubuntu@[manager]:~$ jubaanomaly -f config.json
+    ubuntu@[manager]:~/jubatus_distributed_handson$ jubaanomaly -f config.json
 
 * shell2
 
 ::
 
-    ubuntu@[manager]:~$ ./server
+    ubuntu@[manager]:~/jubatus_distributed_handson$ ./server
 
 
 * shell3
 
 ::
 
-    ubuntu@[manager]:~$ python source.py --streamname test  --filename estimate/test.csv --count 1000
+    ubuntu@[manager]:~/jubatus_distributed_handson$ python source.py --streamname test  --filename test.csv --count 10000
 
 
 * shell4
 
 ::
 
-    ubuntu@[manager]:~$ python jubatus_update.py 10.X.X.X
+    ubuntu@[manager]:~$ python jubatus_update.py --host localhost --user jubatus --queue sensor
 
 * shell5
 
 ::
 
-    ubuntu@[manager]:~$ python jubatus_analyze.py 
+    ubuntu@[manager]:~/jubatus_distributed_handson$ python jubatus_analyze.py 
 
 最後のshell5に異常スコアが表示されていると思います。
 1.0に近ければ正常、それよりも大きければ大きいほど異常度が高いということになります。
 これは、学習している途中なので、結果はタイミングによって変わります。
-なお、もし"WARNING:root:Connect error on fd 7: [Errno 99] Cannot assign requested addressc msgpackrpc.error.TransportError: Retry connection over the limit"のようなエラーが出る場合は、
 
-::
-
-    sudo /sbin/sysctl -w net.ipv4.tcp_tw_recycle=1
-
-を設定しておいてください。一気に多くのクエリーが発行された時に起こります。
 
 分散構成
 -----------------
@@ -167,13 +152,13 @@ jubatusは、サーバ同士、およびプロキシプロセス同士の発見�
 
 これまで起動時に指定していたconfigファイルをzookeeperに登録します。
 
-``sensor_nn`` というのが、このタスクの名前です。このタスクは、zookeeper上に一意である必要があります。
+``jubatus_anomaly`` というのが、このタスクの名前です。このタスクは、zookeeper上に一意である必要があります。
 jubatusは、この名前が同じもの同士、MIXを行おうとします。
 
 ::
 
-    ubuntu@[manager]:~$ jubaconfig -c write -f config.json -t nearest_neighbor -n sensor_nn -z 10.X.X.X:2181
-    ubuntu@[manager]:~$ jubaconfig -c list -z 10.X.X.X:2181
+    ubuntu@[manager]:~/jubatus_distributed_handson$ jubaconfig -c write -f config.json -t anomaly -n jubatus_anomaly -z 10.X.X.X:2181
+    ubuntu@[manager]:~/jubatus_distributed_handson$ jubaconfig -c list -z 10.X.X.X:2181
 
 最終的には以下のプロセス構成になります。
 
@@ -182,21 +167,21 @@ jubatusは、この名前が同じもの同士、MIXを行おうとします。
 
 ::
 
-    ubuntu@[manager]:~$ python source.py
+    ubuntu@[manager]:~/jubatus_distributed_handson$ python source.py
 
-    ubuntu@[s1]:~$ jubanearest_neighbor --zookeeper 10.X.X.X:2181 -n sensor_nn
-    ubuntu@[s2]:~$ jubanearest_neighbor --zookeeper 10.X.X.X:2181 -n sensor_nn
+    ubuntu@[s1]:~/jubatus_distributed_handson$ jubaanomaly --zookeeper 10.X.X.X:2181 -n jubatus_anomaly
+    ubuntu@[s2]:~/jubatus_distributed_handson$ jubaanomaly --zookeeper 10.X.X.X:2181 -n jubatus_anomaly
 
 これで、サーバ二台待ち受けている状態になっているはずです。正しくサーバが待ち受けられているかを確認するために、jubactrlを使ってstatusを確認してみましょう。
 
 ::
 
-    ubuntu@[manager]:~$ jubactl -z 10.X.X.X:2181 -s jubanearest_neighbor -t nearest_neighbor -c status -n sensor_nn
+    ubuntu@[manager]:~/jubatus_distributed_handson$ jubactl -z 10.X.X.X:2181 -s jubaanomaly -t anomaly -c status -n jubatus_anomaly
     active jubaproxy members:
     active jubavisor members:
-    active sensor_nn members:
-    10.122.23.69_9199
-    10.122.23.72_9199
+    active jubatus_anomaly members:
+    10.XX.XX.XX_9199
+    10.XX.XX.YY_9199
 
 ``sensor_nn members`` に二台のマシンが登録されているでしょうか？ここで表示されているprivate IPアドレスは、 ``s1`` , ``s2`` のものです。
 jubatusはzookeeperを介して自動的にサーバのIPアドレス、ポートを管理します。利用者はzookeeperの場所を意識するだけでよいようになります。
@@ -204,17 +189,17 @@ jubatusはzookeeperを介して自動的にサーバのIPアドレス、ポー�
 
 ::
 
-    ubuntu@[c1]:~$ jubanearest_neighbor_proxy --zookeeper 10.X.X.X:2181
-    ubuntu@[c2]:~$ jubanearest_neighbor_proxy --zookeeper 10.X.X.X:2181
+    ubuntu@[c1]:~/jubatus_distributed_handson$ jubaanomaly_proxy --zookeeper 10.X.X.X:2181
+    ubuntu@[c2]:~/jubatus_distributed_handson$ jubaanomaly_proxy --zookeeper 10.X.X.X:2181
 
-    ubuntu@[c1]:~$ python jubatus_update.py 10.X.X.X
-    ubuntu@[c2]:~$ python jubatus_update.py 10.X.X.X
+    ubuntu@[c1]:~$ python jubatus_update.py --host 10.X.X.X
+    ubuntu@[c2]:~$ python jubatus_update.py --host 10.X.X.X
 
 ここまでで分散できていることを確認しましょう。
 
 ::
 
-    ubuntu@[c1]:~$ python jubatus_analyze.py 0
+    ubuntu@[c1]:~/jubatus_distributed_handson$ python jubatus_analyze.py
 
 
 MIXの影響を見る
@@ -225,18 +210,18 @@ interval_secで指定された時間経過するかのどちらかが契機と�
 
 ::
 
-    jubanearest_neighbor --zookeeper 10.X.X.X:2181 --name sensor_nn --interval_sec 300
+    jubaanomaly --zookeeper 10.X.X.X:2181 --name jubatus_anomaly --interval_sec 300
 
 source.pyは、seedオプションで、乱数の制御が出来ます。また、speedは毎秒最大していされた個数をenqueueします。countで、
 何個投入したら止めるかを指定します。
 
 ::
 
-    ubuntu@[manager]:~$ python source.py --seed 1 --speed 5 --count 10000
+    ubuntu@[manager]:~/jubatus_distributed_handson$ python source.py --seed 1 --speed 5 --count 10000
 
 MIXが起きる前と、起きた後で、結果が変わることを確認して下さい。
 
 ::
 
-    ubuntu@[c1]:~$ python jubatus_analyze.py 0
+    ubuntu@[c1]:~/jubatus_distributed_handson$ python jubatus_analyze.py
 
