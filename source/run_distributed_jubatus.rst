@@ -53,7 +53,7 @@ AMI
               Interrupt:27 
 
 上記のうち、このマシンの場合は、10.152.251.74、今後は、10.X.X.Xと表記します。
-サーバのIP（zookeeper, rabbitmq）が必要なのは、このアドレスだけです。
+サーバのPrivate IP（ZookeeperおよびMQの接続管理用）が必要なのは、この ``manager`` アドレスだけです。
 
 .. raw:: html
 
@@ -118,20 +118,20 @@ AMI
 
 ::
 
-    ubuntu@[manager]:~/jubatus_distributed_handson$ python source.py --streamname test  --filename test.csv --count 10000
+    ubuntu@[manager]:~/jubatus_distributed_handson$ python source.py --stream normal --filename test.csv --count 10000 --speed 1
 
 
 * shell4
 
 ::
 
-    ubuntu@[manager]:~$ python jubatus_update.py --host localhost --user jubatus --queue sensor
+    ubuntu@[manager]:~/jubatus_distributed_handson$ python jubatus_update.py --host localhost  --stream normal
 
 * shell5
 
 ::
 
-    ubuntu@[manager]:~/jubatus_distributed_handson$ python jubatus_analyze.py 
+    ubuntu@[manager]:~/jubatus_distributed_handson$ python jubatus_analyze.py --host localhost --stream normal
 
 最後のshell5に異常スコアが表示されていると思います。
 1.0に近ければ正常、それよりも大きければ大きいほど異常度が高いということになります。

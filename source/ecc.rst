@@ -101,19 +101,23 @@ AMIはEC2用の仮想マシンイメージであり、今回の分散ハンズ�
 
 .. image:: m1small.png
 
-8. Step 3: Configure Instance Detailsにおいて``Number of instances:`` が1となっているのを5に変更、 ``Subnet`` が ``No preference (default subnet in any Availability Zone)`` となっているのを ``subnet...Default in ap-northeast-1a`` に変更
+8. Step 3: Configure Instance Detailsにおいて``Number of instances:`` が1となっているのを5に変更、 ``Subnet`` が ``No preference (default subnet in any Availability Zone)`` となっているのを ``subnet...Default in ap-northeast-1a`` に変更し、 ``Next:: Add Storage`` ボタンをクリック
 
 .. image:: numinstance.png
 
-9. 設定を省略するため右下隅の ``Next:: Add Storage`` ボタン、 ``Next:: Tag Instance`` ボタン、 ``Next:: Configure Security Group`` ボタンを連続クリック
+9. Step 4: Add Storage において右端の ``Delete on Termination`` チェックボックスがオンになっていることを確認する。もしオフになっていたらクリックしてオンにする
 
-10. Step 6: Configure Security Groupにおいて ``Assign a security group:`` で ``Select an existing security group`` ラジオボタンを選択
+.. image:: terminate.png
 
-11. 下に表示される ``Security Group ID`` の中から ``Name`` 欄が先ほど作成した ``jubatus_handson`` であるものを探して左端のチェックボックスボタンをクリック
+10. 設定を省略するため右下隅の ``Next:: Tag Instance`` ボタン、 ``Next:: Configure Security Group`` ボタンを連続クリック
 
-12. 右下隅の ``Review and Launch`` ボタンをクリック、セキュリティ上の警告が表示されるがそのまま右下隅の ``Launch`` ボタンをクリック
+11. Step 6: Configure Security Groupにおいて ``Assign a security group:`` で ``Select an existing security group`` ラジオボタンを選択
 
-13. 確認ダイアログで ``Select a key pair`` が ``jubatus_handson`` になっているのを確認し、その下の確認事項のチェックボックスをオンにして ``Launch Instance`` をクリック
+12. 下に表示される ``Security Group ID`` の中から ``Name`` 欄が先ほど作成した ``jubatus_handson`` であるものを探して左端のチェックボックスボタンをクリック
+
+13. 右下隅の ``Review and Launch`` ボタンをクリック、セキュリティ上の警告が表示されるがそのまま右下隅の ``Launch`` ボタンをクリック
+
+14. 確認ダイアログで ``Select a key pair`` が ``jubatus_handson`` になっているのを確認し、その下の確認事項のチェックボックスをオンにして ``Launch Instance`` をクリック
 
 .. image:: launch.png
 
