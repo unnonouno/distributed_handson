@@ -118,7 +118,7 @@ AMI
 
 ::
 
-    ubuntu@[manager]:~/jubatus_distributed_handson$ python source.py --stream normal --filename test.csv --count 10000 --speed 1
+    ubuntu@[manager]:~/jubatus_distributed_handson$ python source.py --streamname normal --filename test.csv --count 10000 --speed 1
 
 
 * shell4
